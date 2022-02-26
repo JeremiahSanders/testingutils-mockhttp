@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Jds.TestingUtils.MockHttp</RootNamespace>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Authors>jds</Authors>
+    <Company />
+    <Copyright>Copyright (c) 2022 Jeremiah Sanders</Copyright>
+    <Description>TestingUtils: MockHttp</Description>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageId>Jds.TestingUtils.MockHttp</PackageId>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/JeremiahSanders/testingutils-mockhttp</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>testing http httpclient json rest api</PackageTags>
+    <PackAsTool>false</PackAsTool>
+    <Product>TestingUtils: MockHttp</Product>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/JeremiahSanders/testingutils-mockhttp</RepositoryUrl>
+    <Title>TestingUtils: MockHttp</Title>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="$(AssemblyName).Tests.Unit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+</Project>
