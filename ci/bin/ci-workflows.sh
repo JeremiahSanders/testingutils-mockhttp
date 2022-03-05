@@ -55,14 +55,28 @@ fi
 ci-validate() {
   ci-dotnet-restore &&
     ci-dotnet-build &&
-    ci-dotnet-test
+    ci-dotnet-test \
+      -p:CollectCoverage=true \
+      -p:Threshold=80 \
+      -p:CoverletOutput="${BUILD_ROOT}/reports/coverage/"
 }
 
 #--
 # Compose the project's artifacts, e.g., compiled binaries, Docker images.
 #--
 ci-compose() {
-  ci-dotnet-pack
+  function createDocs() {
+    local sourcePath="${BUILD_UNPACKAGED_DIST}/TestingUtils.MockHttp.dll"
+    local outputPath="${BUILD_DOCS}/md"
+    xmldocmd "${sourcePath}" "${outputPath}" \
+      --namespace "Jds.TestingUtils.MockHttp" \
+      --source "https://github.com/JeremiahSanders/testingutils-mockhttp/src" \
+      --newline lf \
+      --visibility public
+  }
+  ci-dotnet-publish &&
+    ci-dotnet-pack &&
+    createDocs
 }
 
 #--
