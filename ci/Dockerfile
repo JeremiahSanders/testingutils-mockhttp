@@ -1,1 +1,2 @@
-FROM gnosian/ci-env-dotnet AS build-environment
+FROM gnosian/ci-env-dotnet:latest AS build-environment
+RUN dotnet tool install -g xmldocmd
