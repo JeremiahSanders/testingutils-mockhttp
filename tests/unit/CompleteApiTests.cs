@@ -72,4 +72,32 @@ public class CompleteApiTests
 
     Assert.Equal(expected, actual);
   }
+
+  [Theory]
+  [InlineData(3, 6)]
+  [InlineData(1, 8)]
+  [InlineData(-500, 3720)]
+  public async Task StatefulArrangements_ReturnExpectedResults(int firstValue, int secondValue)
+  {
+    using var testClient = MockApi.CreateCompleteApi();
+
+    var add1Response = await testClient.PostAsJsonAsync(MockApi.StatefulAddPostRoute,
+      new MockApi.StatefulRequest { Value = firstValue });
+    var add2Response = await testClient.PostAsJsonAsync(MockApi.StatefulAddPostRoute,
+      new MockApi.StatefulRequest { Value = secondValue });
+    var get1Response = await testClient.GetFromJsonAsync<int[]>(MockApi.StatefulGetRoute);
+    var remove1Response = await testClient.PostAsJsonAsync(MockApi.StatefulRemovePostRoute,
+      new MockApi.StatefulRequest { Value = firstValue });
+    var get2Response = await testClient.GetFromJsonAsync<int[]>(MockApi.StatefulGetRoute);
+    var remove2Response = await testClient.PostAsJsonAsync(MockApi.StatefulRemovePostRoute,
+      new MockApi.StatefulRequest { Value = secondValue });
+    var get3Response = await testClient.GetFromJsonAsync<int[]>(MockApi.StatefulGetRoute);
+
+    var expectedGet1 = new[] { firstValue, secondValue }.OrderBy(value => value);
+    var expectedGet2 = new[] { secondValue }.OrderBy(value => value);
+    var expectedGet3 = Array.Empty<int>();
+    Assert.Equal(expectedGet1, get1Response!.OrderBy(value => value));
+    Assert.Equal(expectedGet2, get2Response!.OrderBy(value => value));
+    Assert.Equal(expectedGet3, get3Response);
+  }
 }
