@@ -17,7 +17,7 @@ public class RespondDerivedContentJsonTests
       var caseHandler = new MessageCaseHandlerBuilder()
         .AcceptAll()
         .RespondDerivedContentJson(
-          HttpStatusCode.OK,
+          (_, _) => Task.FromResult(HttpStatusCode.OK),
           (message, token) => Task.FromResult(new FauxResponse { httpMethod = message.Method.Method })
         )
         .Build();
@@ -39,7 +39,7 @@ public class RespondDerivedContentJsonTests
       var caseHandler = new MessageCaseHandlerBuilder()
         .AcceptAll()
         .RespondDerivedContentJson(
-          HttpStatusCode.OK,
+          (_, _) => Task.FromResult(HttpStatusCode.OK),
           (request, token) => Task.FromResult(new FauxResponse { httpMethod = request.number.ToString() }),
           new FauxRequest()
         )
@@ -65,7 +65,7 @@ public class RespondDerivedContentJsonTests
       var caseHandler = new MessageCaseHandlerBuilder()
         .AcceptAll()
         .RespondDerivedContentJson(
-          HttpStatusCode.OK,
+          (_, _) => Task.FromResult(HttpStatusCode.OK),
           (request, token) => Task.FromResult(new FauxResponse { httpMethod = request.number.ToString() }),
           new FauxRequest { number = defaultValue }
         )
@@ -88,7 +88,7 @@ public class RespondDerivedContentJsonTests
       var caseHandler = new MessageCaseHandlerBuilder()
         .AcceptAll()
         .RespondDerivedContentJson(
-          HttpStatusCode.OK,
+          _ => HttpStatusCode.OK,
           request => new FauxResponse { httpMethod = request.number.ToString() },
           new FauxRequest()
         )
@@ -114,7 +114,7 @@ public class RespondDerivedContentJsonTests
       var caseHandler = new MessageCaseHandlerBuilder()
         .AcceptAll()
         .RespondDerivedContentJson(
-          HttpStatusCode.OK,
+          _ => HttpStatusCode.OK,
           request => new FauxResponse { httpMethod = request.number.ToString() },
           new FauxRequest { number = defaultValue }
         )
@@ -135,7 +135,7 @@ public class RespondDerivedContentJsonTests
       var caseHandler = new MessageCaseHandlerBuilder()
         .AcceptAll()
         .RespondDerivedContentJson(
-          HttpStatusCode.OK,
+          _ => HttpStatusCode.OK,
           request => new FauxResponse { httpMethod = request.number.ToString() },
           new FauxRequest { number = defaultValue }
         )

@@ -7,7 +7,16 @@ namespace Jds.TestingUtils.MockHttp;
 
 public static partial class MessageCaseHandlerBuilderExtensions
 {
-  private static HttpContent ToJsonHttpContent<T>(this T contentBody,
+  /// <summary>
+  ///   Serializes <paramref name="contentBody" /> as JSON and returns it as <see cref="HttpContent" />.
+  /// </summary>
+  /// <param name="contentBody">A content body object to serialize.</param>
+  /// <param name="jsonSerializerOptions">Optional <see cref="JsonSerializerOptions" />.</param>
+  /// <typeparam name="T">A serializable content body object type.</typeparam>
+  /// <returns>
+  ///   <see cref="HttpContent" />
+  /// </returns>
+  public static HttpContent ToJsonHttpContent<T>(this T contentBody,
     JsonSerializerOptions? jsonSerializerOptions = null)
   {
     return new StringContent(
@@ -45,7 +54,7 @@ public static partial class MessageCaseHandlerBuilderExtensions
   ///   <paramref name="deriveBody" />.
   /// </summary>
   /// <param name="builder">A <see cref="MessageCaseHandlerBuilder" />.</param>
-  /// <param name="httpStatusCode">A response status code.</param>
+  /// <param name="deriveHttpStatusCode">A <see cref="Func{T1, T2, TResult}" /> which will return a response status code.</param>
   /// <param name="deriveBody">A <see cref="Func{T1, T2, TResult}" /> which will create a serializable response body object.</param>
   /// <param name="jsonSerializerOptions">Optional <see cref="JsonSerializerOptions" />.</param>
   /// <typeparam name="T">The response body object type.</typeparam>
@@ -53,14 +62,14 @@ public static partial class MessageCaseHandlerBuilderExtensions
   ///   <paramref name="builder" />
   /// </returns>
   public static MessageCaseHandlerBuilder RespondDerivedContentJson<T>(this MessageCaseHandlerBuilder builder,
-    HttpStatusCode httpStatusCode,
+    Func<HttpRequestMessage, CancellationToken, Task<HttpStatusCode>> deriveHttpStatusCode,
     Func<HttpRequestMessage, CancellationToken, Task<T>> deriveBody,
     JsonSerializerOptions? jsonSerializerOptions = null
   )
   {
     async Task<HttpResponseMessage> ReturnHandler(HttpRequestMessage message, CancellationToken cancellationToken)
     {
-      return new HttpResponseMessage(httpStatusCode)
+      return new HttpResponseMessage(await deriveHttpStatusCode(message, cancellationToken))
       {
         Content = (await deriveBody(message, cancellationToken)).ToJsonHttpContent(jsonSerializerOptions)
       };
@@ -74,7 +83,7 @@ public static partial class MessageCaseHandlerBuilderExtensions
   ///   <paramref name="deriveBody" />, from the incoming message body, parsed as a <typeparamref name="TRequestBody" />.
   /// </summary>
   /// <param name="builder">A <see cref="MessageCaseHandlerBuilder" />.</param>
-  /// <param name="httpStatusCode">A response status code.</param>
+  /// <param name="deriveHttpStatusCode">A <see cref="Func{T, TResult}" /> which will return a response status code.</param>
   /// <param name="deriveBody">A <see cref="Func{T1, T2, TResult}" /> which will create a serializable response body object.</param>
   /// <param name="defaultRequest">
   ///   A default <typeparamref name="TRequestBody" />, used when the incoming request body cannot
@@ -88,7 +97,7 @@ public static partial class MessageCaseHandlerBuilderExtensions
   /// </returns>
   public static MessageCaseHandlerBuilder RespondDerivedContentJson<TRequestBody, TResponseBody>(
     this MessageCaseHandlerBuilder builder,
-    HttpStatusCode httpStatusCode,
+    Func<TRequestBody, CancellationToken, Task<HttpStatusCode>> deriveHttpStatusCode,
     Func<TRequestBody, CancellationToken, Task<TResponseBody>> deriveBody,
     TRequestBody defaultRequest,
     JsonSerializerOptions? jsonSerializerOptions = null
@@ -114,7 +123,7 @@ public static partial class MessageCaseHandlerBuilderExtensions
         requestBody = defaultRequest;
       }
 
-      return new HttpResponseMessage(httpStatusCode)
+      return new HttpResponseMessage(await deriveHttpStatusCode(requestBody, cancellationToken))
       {
         Content = (await deriveBody(requestBody, cancellationToken)).ToJsonHttpContent(jsonSerializerOptions)
       };
@@ -128,7 +137,7 @@ public static partial class MessageCaseHandlerBuilderExtensions
   ///   <paramref name="deriveBody" />, from the incoming message body, parsed as a <typeparamref name="TRequestBody" />.
   /// </summary>
   /// <param name="builder">A <see cref="MessageCaseHandlerBuilder" />.</param>
-  /// <param name="httpStatusCode">A response status code.</param>
+  /// <param name="deriveHttpStatusCode">A <see cref="Func{T, TResult}" /> which will return a response status code.</param>
   /// <param name="deriveBody">A <see cref="Func{T, TResult}" /> which will create a serializable response body object.</param>
   /// <param name="defaultRequest">
   ///   A default <typeparamref name="TRequestBody" />, used when the incoming request body cannot
@@ -142,7 +151,7 @@ public static partial class MessageCaseHandlerBuilderExtensions
   /// </returns>
   public static MessageCaseHandlerBuilder RespondDerivedContentJson<TRequestBody, TResponseBody>(
     this MessageCaseHandlerBuilder builder,
-    HttpStatusCode httpStatusCode,
+    Func<TRequestBody, HttpStatusCode> deriveHttpStatusCode,
     Func<TRequestBody, TResponseBody> deriveBody,
     TRequestBody defaultRequest,
     JsonSerializerOptions? jsonSerializerOptions = null
@@ -168,7 +177,7 @@ public static partial class MessageCaseHandlerBuilderExtensions
         requestBody = defaultRequest;
       }
 
-      return new HttpResponseMessage(httpStatusCode)
+      return new HttpResponseMessage(deriveHttpStatusCode(requestBody))
       {
         Content = deriveBody(requestBody).ToJsonHttpContent(jsonSerializerOptions)
       };
