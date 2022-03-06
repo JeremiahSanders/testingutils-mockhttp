@@ -31,7 +31,7 @@ internal static class MockApi
   {
     return builder.AcceptRoute(HttpMethod.Post, SumIntsJsonPostRoute)
       .RespondDerivedContentJson(
-        HttpStatusCode.OK,
+        (_, _) => Task.FromResult(HttpStatusCode.OK),
         (sumIntsRequest, _) =>
           Task.FromResult(new SumIntsJsonResponse { Sum = sumIntsRequest.Ints.Sum() }), new SumIntsJsonRequest()
       );
