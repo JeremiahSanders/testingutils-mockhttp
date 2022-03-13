@@ -18,9 +18,10 @@ public class RespondContentJsonTests
       )
       .Build();
     var requestMessage = new HttpRequestMessage(HttpMethod.Patch, "https://not-real");
+    var capturedRequest = await CapturedHttpRequestMessage.FromHttpRequestMessage(requestMessage);
     var expected = new FauxResponse { value = value };
 
-    var response = await caseHandler.HandleMessage(requestMessage, CancellationToken.None);
+    var response = await caseHandler.HandleMessage(capturedRequest, CancellationToken.None);
     var actual = await response.Content.ReadFromJsonAsync<FauxResponse>();
 
     Assert.Equal(expected, actual);

@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Jds.TestingUtils.MockHttp;
 
 /// <summary>
@@ -25,7 +27,7 @@ public class MockHttpBuilder
   /// <param name="id">A message case identifier.</param>
   /// <param name="handler">A <see cref="MessageCaseHandler" />.</param>
   /// <returns>This instance.</returns>
-  public MockHttpBuilder WithMessageCaseHandler(string id, MessageCaseHandler handler)
+  internal MockHttpBuilder WithMessageCaseHandler(string id, MessageCaseHandler handler)
   {
     if (!MessageHandlers.ContainsKey(id))
     {
@@ -35,16 +37,6 @@ public class MockHttpBuilder
     MessageHandlers[id] = handler;
 
     return this;
-  }
-
-  /// <summary>
-  ///   Add a <see cref="MessageCaseHandler" />.
-  /// </summary>
-  /// <param name="handler">A <see cref="MessageCaseHandler" />.</param>
-  /// <returns>This instance.</returns>
-  public MockHttpBuilder WithMessageCaseHandler(MessageCaseHandler handler)
-  {
-    return WithMessageCaseHandler(Guid.NewGuid().ToString(), handler);
   }
 
   /// <summary>
@@ -81,13 +73,15 @@ public class MockHttpBuilder
   /// <returns>An <see cref="HttpClient" />.</returns>
   public HttpClient BuildHttpClient()
   {
-    return new HttpClient(BuildArrangedHttpMessageHandler(), true);
+    return new HttpClient(BuildHttpMessageHandler(), true);
   }
 
   /// <summary>
   ///   Builds an <see cref="HttpMessageHandler" /> which handles messages according to the current arrangement.
   /// </summary>
   /// <returns>An <see cref="HttpMessageHandler" />.</returns>
+  [SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
+  [SuppressMessage("ReSharper", "UnusedMember.Global")]
   public HttpMessageHandler BuildHttpMessageHandler()
   {
     return BuildArrangedHttpMessageHandler();

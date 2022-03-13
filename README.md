@@ -6,7 +6,34 @@ Create mock `HttpClient` instances to provide prearranged or derived test data.
 
 ## Use
 
-The `Jds.TestingUtils.MockHttp.MockHttpBuilder` type is the core entry point for creating mock `HttpClient` instances. A detailed example of its use, extracted from project tests, is displayed below. The XML documentation clarifies the expected results of the mock `HttpClient` arrangement.
+The `Jds.TestingUtils.MockHttp.MockHttpBuilder` type is the core entry point for creating mock `HttpClient` instances.
+
+> A detailed example of its use, extracted from project tests, is displayed as "Example" below. The XML documentation
+> clarifies the expected results of the mock `HttpClient` arrangement.
+>
+> The `static HttpClient CreateCompleteApi()` method is the entrypoint showing how a mock `HttpClient` is built using a
+> fluent API.
+
+The general pattern for creating mock `HttpClient` instances is:
+
+```csharp
+public static HttpClient CreateMockHttpClient()
+{
+  return new MockHttpBuilder()
+    .WithHandler(messageCaseBuilder =>
+      messageCaseBuilder
+        .AcceptAll() // Use the most applicable .Accept*() method for the test case.
+        .RespondWith((responseBuilder, capturedRequest) => // The capturedRequest provides the received request's details, including its content, read as byte[]? and string?.
+          responseBuilder
+            .WithStatusCode(HttpStatusCode.OK) // Add response status code and headers using the fluent API.
+            .WithContent( // Use .WithContent() to set the HttpContent returned for accepted requests.
+              CreateHttpContent.TextPlain("Ok!") // The CreateHttpContent class provides HttpContent creation helpers.
+            )
+        )
+    ) // Additional invocations of .WithHandler() can be chained to support multiple APIs or test cases.
+    .BuildHttpClient();
+}
+```
 
 ### Example
 
@@ -16,6 +43,8 @@ using System.Net;
 using System.Net.Mime;
 using System.Text;
 using System.Text.Json.Serialization;
+
+namespace Jds.TestingUtils.MockHttp.Tests.Unit;
 
 internal static class MockApi
 {
@@ -70,8 +99,10 @@ internal static class MockApi
       .WithHandler(PlaintextGet)
       .WithHandler(SumPost)
       .WithHandler(builder => StatefulGet(builder, state))
-      .WithHandler(builder => StatefulAddPost(builder, state))
-      .WithHandler(builder => StatefulRemovePost(builder, state))
+      .WithHandler(builder => StatefulAddPostContainsValue(builder, state))
+      .WithHandler(StatefulAddPostMissingValue)
+      .WithHandler(builder => StatefulRemovePostContainsValue(builder, state))
+      .WithHandler(StatefulRemovePostMissingValue)
       .BuildHttpClient();
   }
 
@@ -147,7 +178,8 @@ internal static class MockApi
       .RespondDerivedContentJson(
         (_, _) => Task.FromResult(HttpStatusCode.OK),
         (sumIntsRequest, _) =>
-          Task.FromResult(new SumIntsJsonResponse { Sum = sumIntsRequest.Ints.Sum() }), new SumIntsJsonRequest()
+          Task.FromResult(new SumIntsJsonResponse { Sum = sumIntsRequest.Ints.Sum() }),
+        new SumIntsJsonRequest()
       );
   }
 
@@ -166,8 +198,8 @@ internal static class MockApi
     ConcurrentBag<int> statefulStore)
   {
     return builder.AcceptRoute(HttpMethod.Get, StatefulGetRoute)
-      .RespondWith((caseBuilder, _) =>
-        caseBuilder
+      .RespondWith((responseBuilder, _) =>
+        responseBuilder
           .WithStatusCode(HttpStatusCode.OK)
           .WithContent(statefulStore.ToJsonHttpContent())
       );
@@ -185,24 +217,41 @@ internal static class MockApi
   /// <returns>
   ///   <paramref name="builder" />
   /// </returns>
-  private static MessageCaseHandlerBuilder StatefulAddPost(MessageCaseHandlerBuilder builder,
+  private static MessageCaseHandlerBuilder StatefulAddPostContainsValue(MessageCaseHandlerBuilder builder,
     ConcurrentBag<int> statefulStore)
   {
-    return builder.AcceptRoute(HttpMethod.Post, StatefulAddPostRoute)
+    return builder
+      .AcceptRouteJson(
+        (method, uri, body) => body.Value != null && method == HttpMethod.Post && uri == StatefulAddPostRoute,
+        new StatefulRequest { Value = null }
+      )
       .RespondDerivedContentJson(
         valueDto => valueDto.Value.HasValue ? HttpStatusCode.OK : HttpStatusCode.BadRequest,
         valueDto =>
         {
-          if (valueDto.Value == null)
-          {
-            return "Value is required";
-          }
-
           statefulStore.Add(valueDto.Value ?? 0);
           return "Added";
         },
         new StatefulRequest { Value = 0 }
       );
+  }
+
+  /// <summary>
+  ///   Arranges <paramref name="builder" /> to return <see cref="HttpStatusCode.BadRequest" /> when a
+  ///   <c>POST</c> <see cref="StatefulAddPostRoute" /> request body contains a null <see cref="StatefulRequest.Value" />.
+  /// </summary>
+  /// <param name="builder">A <see cref="MessageCaseHandlerBuilder" />.</param>
+  /// <returns>
+  ///   <paramref name="builder" />
+  /// </returns>
+  private static MessageCaseHandlerBuilder StatefulAddPostMissingValue(MessageCaseHandlerBuilder builder)
+  {
+    return builder.AcceptRoute(HttpMethod.Post, StatefulAddPostRoute)
+      .AcceptRouteJson(
+        (method, uri, body) => !body.Value.HasValue && method == HttpMethod.Post && uri == StatefulAddPostRoute,
+        new StatefulRequest { Value = null }
+      )
+      .RespondStaticContent(HttpStatusCode.BadRequest, CreateHttpContent.TextPlain(".value is required."));
   }
 
   /// <summary>
@@ -217,19 +266,18 @@ internal static class MockApi
   /// <returns>
   ///   <paramref name="builder" />
   /// </returns>
-  private static MessageCaseHandlerBuilder StatefulRemovePost(MessageCaseHandlerBuilder builder,
+  private static MessageCaseHandlerBuilder StatefulRemovePostContainsValue(MessageCaseHandlerBuilder builder,
     ConcurrentBag<int> statefulStore)
   {
-    return builder.AcceptRoute(HttpMethod.Post, StatefulRemovePostRoute)
+    return builder
+      .AcceptRouteJson(
+        (method, uri, body) => body.Value != null && method == HttpMethod.Post && uri == StatefulRemovePostRoute,
+        new StatefulRequest { Value = null }
+      )
       .RespondDerivedContentJson(
-        valueDto => valueDto.Value.HasValue ? HttpStatusCode.OK : HttpStatusCode.BadRequest,
+        _ => HttpStatusCode.OK,
         valueDto =>
         {
-          if (valueDto.Value == null)
-          {
-            return "Value is required";
-          }
-
           var currentList = statefulStore.ToList();
           statefulStore.Clear();
           foreach (var value in currentList.Except(new[] { valueDto.Value ?? 0 }))
@@ -241,6 +289,24 @@ internal static class MockApi
         },
         new StatefulRequest { Value = 0 }
       );
+  }
+
+  /// <summary>
+  ///   Arranges <paramref name="builder" /> to return <see cref="HttpStatusCode.BadRequest" /> when a
+  ///   <c>POST</c> <see cref="StatefulRemovePostRoute" /> request body contains a null <see cref="StatefulRequest.Value" />.
+  /// </summary>
+  /// <param name="builder">A <see cref="MessageCaseHandlerBuilder" />.</param>
+  /// <returns>
+  ///   <paramref name="builder" />
+  /// </returns>
+  private static MessageCaseHandlerBuilder StatefulRemovePostMissingValue(MessageCaseHandlerBuilder builder)
+  {
+    return builder.AcceptRoute(HttpMethod.Post, StatefulRemovePostRoute)
+      .AcceptRouteJson(
+        (method, uri, body) => !body.Value.HasValue && method == HttpMethod.Post && uri == StatefulRemovePostRoute,
+        new StatefulRequest { Value = null }
+      )
+      .RespondStaticContent(HttpStatusCode.BadRequest, CreateHttpContent.TextPlain(".value is required."));
   }
 
   public record StatefulRequest

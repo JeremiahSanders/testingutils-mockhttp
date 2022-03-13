@@ -1,6 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
-using System.Net.Mime;
-using System.Text;
 using System.Text.Json;
 
 namespace Jds.TestingUtils.MockHttp;
@@ -8,22 +7,38 @@ namespace Jds.TestingUtils.MockHttp;
 public static partial class MessageCaseHandlerBuilderExtensions
 {
   /// <summary>
-  ///   Serializes <paramref name="contentBody" /> as JSON and returns it as <see cref="HttpContent" />.
+  ///   Arranges the <see cref="MessageCaseHandler" /> to accept requests based upon their <see cref="HttpMethod" />,
+  ///   <see cref="Uri" />, and request body, parsed as <typeparamref name="T" /> from JSON.
   /// </summary>
-  /// <param name="contentBody">A content body object to serialize.</param>
-  /// <param name="jsonSerializerOptions">Optional <see cref="JsonSerializerOptions" />.</param>
-  /// <typeparam name="T">A serializable content body object type.</typeparam>
+  /// <param name="builder">A <see cref="MessageCaseHandlerBuilder" />.</param>
+  /// <param name="rule">A <see cref="Func{T1,T2,T3,TResult}" /> which evaluates the request for acceptance.</param>
+  /// <param name="defaultRequestBody">A default <typeparamref name="T" />.</param>
+  /// <param name="serializerOptions">Optional <see cref="JsonSerializerOptions" /> configuring deserialization.</param>
+  /// <typeparam name="T">A request body type.</typeparam>
   /// <returns>
-  ///   <see cref="HttpContent" />
+  ///   <paramref name="builder" />
   /// </returns>
-  public static HttpContent ToJsonHttpContent<T>(this T contentBody,
-    JsonSerializerOptions? jsonSerializerOptions = null)
+  public static MessageCaseHandlerBuilder AcceptRouteJson<T>(this MessageCaseHandlerBuilder builder,
+    Func<HttpMethod, Uri?, T, bool> rule,
+    T defaultRequestBody,
+    JsonSerializerOptions? serializerOptions = null
+  )
   {
-    return new StringContent(
-      JsonSerializer.Serialize(contentBody, jsonSerializerOptions),
-      Encoding.UTF8,
-      MediaTypeNames.Application.Json
-    );
+    return builder.AddAcceptRule(message =>
+    {
+      try
+      {
+        var requestBody = (message.ContentString != null
+                            ? JsonSerializer.Deserialize<T>(message.ContentString, serializerOptions)
+                            : defaultRequestBody)
+                          ?? defaultRequestBody;
+        return Task.FromResult(rule(message.Method, message.RequestUri, requestBody));
+      }
+      catch
+      {
+        return Task.FromResult(rule(message.Method, message.RequestUri, defaultRequestBody));
+      }
+    });
   }
 
   /// <summary>
@@ -62,12 +77,13 @@ public static partial class MessageCaseHandlerBuilderExtensions
   ///   <paramref name="builder" />
   /// </returns>
   public static MessageCaseHandlerBuilder RespondDerivedContentJson<T>(this MessageCaseHandlerBuilder builder,
-    Func<HttpRequestMessage, CancellationToken, Task<HttpStatusCode>> deriveHttpStatusCode,
-    Func<HttpRequestMessage, CancellationToken, Task<T>> deriveBody,
+    Func<CapturedHttpRequestMessage, CancellationToken, Task<HttpStatusCode>> deriveHttpStatusCode,
+    Func<CapturedHttpRequestMessage, CancellationToken, Task<T>> deriveBody,
     JsonSerializerOptions? jsonSerializerOptions = null
   )
   {
-    async Task<HttpResponseMessage> ReturnHandler(HttpRequestMessage message, CancellationToken cancellationToken)
+    async Task<HttpResponseMessage> ReturnHandler(CapturedHttpRequestMessage message,
+      CancellationToken cancellationToken)
     {
       return new HttpResponseMessage(await deriveHttpStatusCode(message, cancellationToken))
       {
@@ -103,33 +119,15 @@ public static partial class MessageCaseHandlerBuilderExtensions
     JsonSerializerOptions? jsonSerializerOptions = null
   )
   {
-    async Task<HttpResponseMessage> ReturnHandler(HttpRequestMessage message, CancellationToken cancellationToken)
+    return builder.RespondWith(async (responseBuilder, message, cancellationToken) =>
     {
-      TRequestBody requestBody;
-      try
-      {
-        if (message.Content == null)
-        {
-          requestBody = defaultRequest;
-        }
-        else
-        {
-          await using var contentStream = await message.Content.ReadAsStreamAsync(cancellationToken);
-          requestBody = JsonSerializer.Deserialize<TRequestBody>(contentStream) ?? defaultRequest;
-        }
-      }
-      catch
-      {
-        requestBody = defaultRequest;
-      }
+      var requestBody = await message.SafelyDeserialize(defaultRequest, cancellationToken, jsonSerializerOptions);
 
-      return new HttpResponseMessage(await deriveHttpStatusCode(requestBody, cancellationToken))
-      {
-        Content = (await deriveBody(requestBody, cancellationToken)).ToJsonHttpContent(jsonSerializerOptions)
-      };
-    }
-
-    return builder.SetResponseHandler(ReturnHandler);
+      return responseBuilder
+        .WithStatusCode(await deriveHttpStatusCode(requestBody, cancellationToken))
+        .WithContent(
+          (await deriveBody(requestBody, cancellationToken)).ToJsonHttpContent(jsonSerializerOptions));
+    });
   }
 
   /// <summary>
@@ -157,32 +155,42 @@ public static partial class MessageCaseHandlerBuilderExtensions
     JsonSerializerOptions? jsonSerializerOptions = null
   )
   {
-    async Task<HttpResponseMessage> ReturnHandler(HttpRequestMessage message, CancellationToken cancellationToken)
+    return builder.RespondWith(async (responseBuilder, message, cancellationToken) =>
     {
-      TRequestBody requestBody;
-      try
-      {
-        if (message.Content == null)
-        {
-          requestBody = defaultRequest;
-        }
-        else
-        {
-          await using var contentStream = await message.Content.ReadAsStreamAsync(cancellationToken);
-          requestBody = JsonSerializer.Deserialize<TRequestBody>(contentStream) ?? defaultRequest;
-        }
-      }
-      catch
+      var requestBody = await message.SafelyDeserialize(defaultRequest, cancellationToken, jsonSerializerOptions);
+
+      return responseBuilder
+        .WithStatusCode(deriveHttpStatusCode(requestBody))
+        .WithContent(deriveBody(requestBody).ToJsonHttpContent(jsonSerializerOptions));
+    });
+  }
+
+  [SuppressMessage("ReSharper", "UnusedParameter.Local")]
+  private static Task<TRequestBody> SafelyDeserialize<TRequestBody>(
+    this CapturedHttpRequestMessage message,
+    TRequestBody defaultRequest,
+    CancellationToken cancellationToken,
+    JsonSerializerOptions? jsonSerializerOptions = null
+  )
+  {
+    TRequestBody requestBody;
+    try
+    {
+      if (message.ContentString == null)
       {
         requestBody = defaultRequest;
       }
-
-      return new HttpResponseMessage(deriveHttpStatusCode(requestBody))
+      else
       {
-        Content = deriveBody(requestBody).ToJsonHttpContent(jsonSerializerOptions)
-      };
+        requestBody = JsonSerializer.Deserialize<TRequestBody>(message.ContentString, jsonSerializerOptions) ??
+                      defaultRequest;
+      }
+    }
+    catch
+    {
+      requestBody = defaultRequest;
     }
 
-    return builder.SetResponseHandler(ReturnHandler);
+    return Task.FromResult(requestBody);
   }
 }

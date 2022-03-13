@@ -30,7 +30,8 @@ public class CompleteApiTests
     using var testClient = MockApi.CreateCompleteApi();
     var expected = HttpStatusCode.OK;
 
-    var actual = (await testClient.SendAsync(new HttpRequestMessage(HttpMethod.Head, MockApi.PlainTextGetRoute)))
+    var actual =
+      (await testClient.SendAsync(new HttpRequestMessage(HttpMethod.Head, MockApi.PlainTextGetRoute)))
       .StatusCode;
 
     Assert.Equal(expected, actual);
@@ -67,7 +68,8 @@ public class CompleteApiTests
     var expected = new MockApi.SumIntsJsonResponse { Sum = 0 };
 
     var response =
-      await testClient.PostAsync(MockApi.SumIntsJsonPostRoute, new ByteArrayContent(new byte[] { 1, 2, 3 }));
+      await testClient.PostAsync(MockApi.SumIntsJsonPostRoute,
+        new ByteArrayContent(new byte[] { 1, 2, 3 }));
     var actual = await response.Content.ReadFromJsonAsync<MockApi.SumIntsJsonResponse>();
 
     Assert.Equal(expected, actual);
@@ -93,11 +95,29 @@ public class CompleteApiTests
       new MockApi.StatefulRequest { Value = secondValue });
     var get3Response = await testClient.GetFromJsonAsync<int[]>(MockApi.StatefulGetRoute);
 
+    Assert.Equal(HttpStatusCode.OK, add1Response.StatusCode);
+    Assert.Equal(HttpStatusCode.OK, add2Response.StatusCode);
+    Assert.Equal(HttpStatusCode.OK, remove1Response.StatusCode);
+    Assert.Equal(HttpStatusCode.OK, remove2Response.StatusCode);
+
     var expectedGet1 = new[] { firstValue, secondValue }.OrderBy(value => value);
     var expectedGet2 = new[] { secondValue }.OrderBy(value => value);
     var expectedGet3 = Array.Empty<int>();
     Assert.Equal(expectedGet1, get1Response!.OrderBy(value => value));
     Assert.Equal(expectedGet2, get2Response!.OrderBy(value => value));
     Assert.Equal(expectedGet3, get3Response);
+  }
+
+  [Fact]
+  public async Task StatefulAdd_GivenNullValue_ReturnsBadRequest()
+  {
+    using var testClient = MockApi.CreateCompleteApi();
+    const HttpStatusCode expected = HttpStatusCode.BadRequest;
+
+    var addNull =
+      await testClient.PostAsJsonAsync(MockApi.StatefulAddPostRoute,
+        new MockApi.StatefulRequest { Value = null });
+
+    Assert.Equal(expected, addNull.StatusCode);
   }
 }
