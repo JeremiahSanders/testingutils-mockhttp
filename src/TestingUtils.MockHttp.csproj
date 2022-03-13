@@ -10,7 +10,7 @@
 
   <PropertyGroup>
     <Authors>jds</Authors>
-    <Company/>
+    <Company />
     <Copyright>Copyright (c) 2022 Jeremiah Sanders</Copyright>
     <Description>TestingUtils: MockHttp</Description>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
@@ -27,7 +27,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="$(AssemblyName).Tests.Unit"/>
+    <InternalsVisibleTo Include="$(AssemblyName).Tests.Unit" />
   </ItemGroup>
 
   <ItemGroup>

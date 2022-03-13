@@ -1,5 +1,7 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Net.Mime;
 using Xunit;
 
 namespace Jds.TestingUtils.MockHttp.Tests.Unit;
@@ -67,9 +69,13 @@ public class CompleteApiTests
     using var testClient = MockApi.CreateCompleteApi();
     var expected = new MockApi.SumIntsJsonResponse { Sum = 0 };
 
-    var response =
-      await testClient.PostAsync(MockApi.SumIntsJsonPostRoute,
-        new ByteArrayContent(new byte[] { 1, 2, 3 }));
+    var message = new HttpRequestMessage(HttpMethod.Post, MockApi.SumIntsJsonPostRoute)
+    {
+      Content = new ByteArrayContent(new byte[] { 1, 2, 3 })
+    };
+    message.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(MediaTypeNames.Application.Json));
+    message.Options.Set(new HttpRequestOptionsKey<string>(Guid.NewGuid().ToString()), Guid.NewGuid().ToString());
+    var response = await testClient.SendAsync(message);
     var actual = await response.Content.ReadFromJsonAsync<MockApi.SumIntsJsonResponse>();
 
     Assert.Equal(expected, actual);

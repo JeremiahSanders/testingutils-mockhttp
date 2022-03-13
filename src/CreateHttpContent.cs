@@ -1,6 +1,8 @@
+using System.Net.Http.Headers;
 using System.Net.Mime;
 using System.Text;
 using System.Text.Json;
+using System.Xml.Serialization;
 
 namespace Jds.TestingUtils.MockHttp;
 
@@ -28,6 +30,40 @@ public static class CreateHttpContent
   }
 
   /// <summary>
+  ///   Serializes <paramref name="contentBody" /> as XML and returns it as <see cref="HttpContent" />.
+  /// </summary>
+  /// <param name="contentBody">A content body object to serialize.</param>
+  /// <param name="contentType">
+  ///   An optional <see cref="MediaTypeHeaderValue" />, e.g., <c>application/soap+xml</c>. Defaults
+  ///   to <see cref="MediaTypeNames.Application.Xml" />.
+  /// </param>
+  /// <param name="serializer">An optional <see cref="XmlSerializer" />. If not provided, one will be created.</param>
+  /// <typeparam name="T">A serializable content body object type.</typeparam>
+  /// <returns>
+  ///   <see cref="HttpContent" />
+  /// </returns>
+  /// <exception cref="ArgumentNullException">Thrown when <paramref name="contentBody" /> is null.</exception>
+  /// <exception cref="InvalidOperationException">Thrown when serialization fails.</exception>
+  public static HttpContent ApplicationXml<T>(T contentBody,
+    MediaTypeHeaderValue? contentType = null,
+    XmlSerializer? serializer = null
+  )
+  {
+    if (contentBody == null)
+    {
+      throw new ArgumentNullException(nameof(contentBody), "Content cannot be null");
+    }
+
+    serializer ??= XmlSerialization.GetSerializer(contentBody.GetType());
+    contentType ??= new MediaTypeHeaderValue(MediaTypeNames.Application.Xml);
+
+    var writer = new StringWriter();
+    serializer.Serialize(writer, contentBody);
+    writer.Flush();
+    return new StringContent(writer.ToString(), writer.Encoding) { Headers = { ContentType = contentType } };
+  }
+
+  /// <summary>
   ///   Create a <see cref="MediaTypeNames.Text.Plain" /> <see cref="HttpContent" />.
   /// </summary>
   /// <param name="content">Body content.</param>
@@ -51,5 +87,14 @@ public static class CreateHttpContent
   public static HttpContent ToTextHttpContent(this string contentBody, Encoding? encoding = null)
   {
     return TextPlain(contentBody, encoding);
+  }
+
+  /// <inheritdoc cref="ApplicationXml{T}" />
+  public static HttpContent ToXmlHttpContent<T>(this T contentBody,
+    MediaTypeHeaderValue? contentType = null,
+    XmlSerializer? serializer = null
+  )
+  {
+    return ApplicationXml(contentBody, contentType, serializer);
   }
 }
