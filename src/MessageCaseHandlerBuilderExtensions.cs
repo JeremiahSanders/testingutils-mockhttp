@@ -58,11 +58,11 @@ public static partial class MessageCaseHandlerBuilderExtensions
   ///   <paramref name="builder" />
   /// </returns>
   public static MessageCaseHandlerBuilder RespondWith(this MessageCaseHandlerBuilder builder,
-    Func<HttpResponseMessageBuilder, HttpRequestMessage, HttpResponseMessageBuilder> handlerBuilder)
+    Func<HttpResponseMessageBuilder, CapturedHttpRequestMessage, HttpResponseMessageBuilder> handlerBuilder)
   {
     return builder.SetResponseHandler((message, _) =>
       handlerBuilder(new HttpResponseMessageBuilder()
-          .WithRequestMessage(message), message)
+          .WithRequestMessage(message.ToHttpRequestMessage()), message)
         .Build()
         .AsTask()
     );
@@ -81,12 +81,36 @@ public static partial class MessageCaseHandlerBuilderExtensions
   ///   <paramref name="builder" />
   /// </returns>
   public static MessageCaseHandlerBuilder RespondWith(this MessageCaseHandlerBuilder builder,
-    Func<HttpResponseMessageBuilder, HttpRequestMessage, CancellationToken, Task<HttpResponseMessageBuilder>>
+    Func<HttpResponseMessageBuilder, CapturedHttpRequestMessage, CancellationToken, Task<HttpResponseMessageBuilder>>
       handlerBuilder)
   {
     return builder.SetResponseHandler(async (message, cancellationToken) =>
       (await handlerBuilder(new HttpResponseMessageBuilder()
-        .WithRequestMessage(message), message, cancellationToken))
+        .WithRequestMessage(message.ToHttpRequestMessage()), message, cancellationToken))
       .Build());
+  }
+
+  private static HttpRequestMessage ToHttpRequestMessage(this CapturedHttpRequestMessage capturedRequest)
+  {
+    var message = new HttpRequestMessage(capturedRequest.Method, capturedRequest.RequestUri)
+    {
+      Content = capturedRequest.Content,
+      Method = capturedRequest.Method,
+      Version = capturedRequest.Version,
+      RequestUri = capturedRequest.RequestUri,
+      VersionPolicy = capturedRequest.VersionPolicy
+    };
+
+    foreach (var (key, values) in capturedRequest.Headers)
+    {
+      message.Headers.Add(key, values);
+    }
+
+    foreach (var keyValuePair in capturedRequest.Options)
+    {
+      message.Options.Set(new HttpRequestOptionsKey<object?>(keyValuePair.Key), keyValuePair.Value);
+    }
+
+    return message;
   }
 }

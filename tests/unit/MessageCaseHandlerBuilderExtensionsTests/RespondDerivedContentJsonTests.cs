@@ -22,9 +22,10 @@ public class RespondDerivedContentJsonTests
         )
         .Build();
       var requestMessage = new HttpRequestMessage(HttpMethod.Patch, "https://not-real");
+      var capturedRequest = await CapturedHttpRequestMessage.FromHttpRequestMessage(requestMessage);
       var expected = new FauxResponse { httpMethod = requestMessage.Method.Method };
 
-      var response = await caseHandler.HandleMessage(requestMessage, CancellationToken.None);
+      var response = await caseHandler.HandleMessage(capturedRequest, CancellationToken.None);
       var actual = await response.Content.ReadFromJsonAsync<FauxResponse>();
 
       Assert.Equal(expected, actual);
@@ -50,9 +51,10 @@ public class RespondDerivedContentJsonTests
         Content = new StringContent(JsonSerializer.Serialize(requestObject), Encoding.UTF8,
           MediaTypeNames.Application.Json)
       };
+      var capturedRequest = await CapturedHttpRequestMessage.FromHttpRequestMessage(requestMessage);
       var expected = new FauxResponse { httpMethod = requestObject.number.ToString() };
 
-      var response = await caseHandler.HandleMessage(requestMessage, CancellationToken.None);
+      var response = await caseHandler.HandleMessage(capturedRequest, CancellationToken.None);
       var actual = await response.Content.ReadFromJsonAsync<FauxResponse>();
 
       Assert.Equal(expected, actual);
@@ -71,9 +73,10 @@ public class RespondDerivedContentJsonTests
         )
         .Build();
       var requestMessage = new HttpRequestMessage(HttpMethod.Get, "https://not-real");
+      var capturedRequest = await CapturedHttpRequestMessage.FromHttpRequestMessage(requestMessage);
       var expected = new FauxResponse { httpMethod = defaultValue.ToString() };
 
-      var response = await caseHandler.HandleMessage(requestMessage, CancellationToken.None);
+      var response = await caseHandler.HandleMessage(capturedRequest, CancellationToken.None);
       var actual = await response.Content.ReadFromJsonAsync<FauxResponse>();
 
       Assert.Equal(expected, actual);
@@ -99,9 +102,10 @@ public class RespondDerivedContentJsonTests
         Content = new StringContent(JsonSerializer.Serialize(requestObject), Encoding.UTF8,
           MediaTypeNames.Application.Json)
       };
+      var capturedRequest = await CapturedHttpRequestMessage.FromHttpRequestMessage(requestMessage);
       var expected = new FauxResponse { httpMethod = requestObject.number.ToString() };
 
-      var response = await caseHandler.HandleMessage(requestMessage, CancellationToken.None);
+      var response = await caseHandler.HandleMessage(capturedRequest, CancellationToken.None);
       var actual = await response.Content.ReadFromJsonAsync<FauxResponse>();
 
       Assert.Equal(expected, actual);
@@ -120,9 +124,10 @@ public class RespondDerivedContentJsonTests
         )
         .Build();
       var requestMessage = new HttpRequestMessage(HttpMethod.Get, "https://not-real");
+      var capturedRequest = await CapturedHttpRequestMessage.FromHttpRequestMessage(requestMessage);
       var expected = new FauxResponse { httpMethod = defaultValue.ToString() };
 
-      var response = await caseHandler.HandleMessage(requestMessage, CancellationToken.None);
+      var response = await caseHandler.HandleMessage(capturedRequest, CancellationToken.None);
       var actual = await response.Content.ReadFromJsonAsync<FauxResponse>();
 
       Assert.Equal(expected, actual);
@@ -144,9 +149,10 @@ public class RespondDerivedContentJsonTests
       {
         Content = new StringContent("not it", Encoding.UTF8)
       };
+      var capturedRequest = await CapturedHttpRequestMessage.FromHttpRequestMessage(requestMessage);
       var expected = new FauxResponse { httpMethod = defaultValue.ToString() };
 
-      var response = await caseHandler.HandleMessage(requestMessage, CancellationToken.None);
+      var response = await caseHandler.HandleMessage(capturedRequest, CancellationToken.None);
       var actual = await response.Content.ReadFromJsonAsync<FauxResponse>();
 
       Assert.Equal(expected, actual);

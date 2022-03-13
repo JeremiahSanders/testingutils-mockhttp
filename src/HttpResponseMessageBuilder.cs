@@ -100,9 +100,14 @@ public class HttpResponseMessageBuilder
   /// <summary>
   ///   Sets the <see cref="HttpResponseMessage.Version" />.
   /// </summary>
+  /// <remarks>
+  ///   This method does not set an application/API version or headers. It sets the
+  ///   <see cref="HttpResponseMessage.Version" />.
+  ///   Overriding the default value, <c>1.1</c>, is uncommon.
+  /// </remarks>
   /// <param name="version">
   ///   An HTTP message version. Per <see cref="HttpResponseMessage.Version" /> documentation, the
-  ///   default is 1.1.
+  ///   default is <c>1.1</c>.
   /// </param>
   /// <returns>This instance.</returns>
   public HttpResponseMessageBuilder WithVersion(Version version)

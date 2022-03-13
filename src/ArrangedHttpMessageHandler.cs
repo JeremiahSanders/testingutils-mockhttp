@@ -99,20 +99,21 @@ public class ArrangedHttpMessageHandler : HttpMessageHandler,
   protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
     CancellationToken cancellationToken)
   {
-    var handler = await TryGetHandler(request) ??
+    var capturedMessage = await CapturedHttpRequestMessage.FromHttpRequestMessage(request);
+    var handler = await TryGetHandler(capturedMessage) ??
                   throw new InvalidOperationException(
                     $"No handlers registered for request. {request.Method} {request.RequestUri}");
 
-    return await handler(request, cancellationToken);
+    return await handler(capturedMessage, cancellationToken);
   }
 
-  private async Task<Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>?> TryGetHandler(
-    HttpRequestMessage request)
+  private async Task<Func<CapturedHttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>?> TryGetHandler(
+    CapturedHttpRequestMessage capturedMessage)
   {
     foreach (var handlerIdentifier in _handlerOrder)
     {
       var arrangedHandler = ArrangedHandlers[handlerIdentifier];
-      if (await arrangedHandler.DoesHandleMessage(request))
+      if (await arrangedHandler.DoesHandleMessage(capturedMessage))
       {
         return arrangedHandler.HandleMessage;
       }

@@ -7,8 +7,8 @@ namespace Jds.TestingUtils.MockHttp;
 /// </summary>
 public class MessageCaseHandlerBuilder
 {
-  private readonly List<Func<HttpRequestMessage, Task<bool>>> _acceptRules;
-  private Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> _responseHandler;
+  private readonly List<Func<CapturedHttpRequestMessage, Task<bool>>> _acceptRules;
+  private Func<CapturedHttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> _responseHandler;
 
   /// <summary>
   ///   Initializes a new instance of the <see cref="MessageCaseHandlerBuilder" /> class.
@@ -16,7 +16,7 @@ public class MessageCaseHandlerBuilder
   /// <exception cref="InvalidOperationException"></exception>
   public MessageCaseHandlerBuilder()
   {
-    _acceptRules = new List<Func<HttpRequestMessage, Task<bool>>>();
+    _acceptRules = new List<Func<CapturedHttpRequestMessage, Task<bool>>>();
     _responseHandler =
       [ExcludeFromCodeCoverage](_, _) => throw new InvalidOperationException("Response not configured.");
   }
@@ -34,7 +34,7 @@ public class MessageCaseHandlerBuilder
   ///   <see cref="MessageCaseHandler" /> will handle the message.
   /// </param>
   /// <returns>This instance.</returns>
-  public MessageCaseHandlerBuilder WithAcceptRule(Func<HttpRequestMessage, Task<bool>> acceptRule)
+  public MessageCaseHandlerBuilder AddAcceptRule(Func<CapturedHttpRequestMessage, Task<bool>> acceptRule)
   {
     _acceptRules.Add(acceptRule);
 
@@ -44,10 +44,11 @@ public class MessageCaseHandlerBuilder
   /// <summary>
   ///   Sets the asynchronous response handler for the <see cref="MessageCaseHandler" />.
   /// </summary>
+  /// <remarks>Replaces any existing response handler. Only a single response handler is supported.</remarks>
   /// <param name="responseHandler">A <see cref="Func{T1,T2,TResult}" /> response handler.</param>
-  /// <returns>This instance</returns>
+  /// <returns>This instance.</returns>
   public MessageCaseHandlerBuilder SetResponseHandler(
-    Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> responseHandler
+    Func<CapturedHttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> responseHandler
   )
   {
     _responseHandler = responseHandler;
@@ -64,12 +65,12 @@ public class MessageCaseHandlerBuilder
     return new MessageCaseHandler(CreateDoesHandleMessage(), _responseHandler);
   }
 
-  private Func<HttpRequestMessage, Task<bool>> CreateDoesHandleMessage()
+  private Func<CapturedHttpRequestMessage, Task<bool>> CreateDoesHandleMessage()
   {
     // Shallow-clone the accept rules, to prevent later builder modifications changing the accept rules reference value.
-    var currentAcceptRules = new List<Func<HttpRequestMessage, Task<bool>>>(_acceptRules);
+    var currentAcceptRules = new List<Func<CapturedHttpRequestMessage, Task<bool>>>(_acceptRules);
 
-    async Task<bool> DoesHandle(HttpRequestMessage message)
+    async Task<bool> DoesHandle(CapturedHttpRequestMessage message)
     {
       foreach (var acceptRule in currentAcceptRules)
       {

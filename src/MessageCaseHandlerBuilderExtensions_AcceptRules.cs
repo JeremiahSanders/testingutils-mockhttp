@@ -10,7 +10,7 @@ public static partial class MessageCaseHandlerBuilderExtensions
   /// </returns>
   public static MessageCaseHandlerBuilder AcceptAll(this MessageCaseHandlerBuilder builder)
   {
-    return builder.WithAcceptRule(_ => true.AsTask());
+    return builder.AddAcceptRule(_ => true.AsTask());
   }
 
   /// <summary>
@@ -23,7 +23,7 @@ public static partial class MessageCaseHandlerBuilderExtensions
   /// </returns>
   public static MessageCaseHandlerBuilder AcceptMethod(this MessageCaseHandlerBuilder builder, HttpMethod httpMethod)
   {
-    return builder.WithAcceptRule(message => (message.Method == httpMethod).AsTask());
+    return builder.AddAcceptRule(message => (message.Method == httpMethod).AsTask());
   }
 
   /// <summary>
@@ -37,7 +37,7 @@ public static partial class MessageCaseHandlerBuilderExtensions
   public static MessageCaseHandlerBuilder AcceptRoute(this MessageCaseHandlerBuilder builder,
     Func<HttpMethod, Uri?, bool> matcher)
   {
-    return builder.WithAcceptRule(message => matcher(message.Method, message.RequestUri).AsTask());
+    return builder.AddAcceptRule(message => matcher(message.Method, message.RequestUri).AsTask());
   }
 
   /// <summary>
@@ -65,7 +65,7 @@ public static partial class MessageCaseHandlerBuilderExtensions
   /// </returns>
   public static MessageCaseHandlerBuilder AcceptUri(this MessageCaseHandlerBuilder builder, Func<Uri?, bool> matcher)
   {
-    return builder.WithAcceptRule(message => matcher(message.RequestUri).AsTask());
+    return builder.AddAcceptRule(message => matcher(message.RequestUri).AsTask());
   }
 
   /// <summary>
