@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Http.Headers;
 using System.Text;
 
@@ -34,6 +35,7 @@ public record CapturedHttpRequestMessage(
   /// <returns>A <see cref="CapturedHttpRequestMessage" />.</returns>
   public static async Task<CapturedHttpRequestMessage> FromHttpRequestMessage(HttpRequestMessage message)
   {
+    [ExcludeFromCodeCoverage]
     static string? ReadAsString(Encoding encoding, byte[] bytes)
     {
       try
