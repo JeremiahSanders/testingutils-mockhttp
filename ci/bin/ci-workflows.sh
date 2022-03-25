@@ -74,8 +74,10 @@ ci-compose() {
       --newline lf \
       --visibility public
   }
-  ci-dotnet-publish &&
-    ci-dotnet-pack &&
+  ci-dotnet-publish \
+    -p:GenerateDocumentationFile=true &&
+    ci-dotnet-pack \
+      -p:GenerateDocumentationFile=true &&
     createDocs
 }
 
