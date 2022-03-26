@@ -32,8 +32,12 @@ public record CapturedHttpRequestMessage(
   ///   Captures the content of <paramref name="message" />.
   /// </summary>
   /// <param name="message">An <see cref="HttpRequestMessage" />.</param>
+  /// <param name="cancellationToken">A <see cref="CancellationToken" />.</param>
   /// <returns>A <see cref="CapturedHttpRequestMessage" />.</returns>
-  public static async Task<CapturedHttpRequestMessage> FromHttpRequestMessage(HttpRequestMessage message)
+  public static async Task<CapturedHttpRequestMessage> FromHttpRequestMessage(
+    HttpRequestMessage message,
+    CancellationToken cancellationToken = default
+  )
   {
     [ExcludeFromCodeCoverage]
     static string? ReadAsString(Encoding encoding, byte[] bytes)
@@ -60,7 +64,7 @@ public record CapturedHttpRequestMessage(
       }
     }
 
-    var bytes = message.Content != null ? await message.Content.ReadAsByteArrayAsync(CancellationToken.None) : null;
+    var bytes = message.Content != null ? await message.Content.ReadAsByteArrayAsync(cancellationToken) : null;
     var content = bytes != null ? ReadAsString(GetEncoding(message.Content!.Headers), bytes) : null;
 
     return new CapturedHttpRequestMessage(
@@ -74,5 +78,27 @@ public record CapturedHttpRequestMessage(
       bytes,
       content
     );
+  }
+
+  public static HttpRequestMessage ToHttpRequestMessage(CapturedHttpRequestMessage capturedRequest)
+  {
+    var request = new HttpRequestMessage(capturedRequest.Method, capturedRequest.RequestUri)
+    {
+      Content = capturedRequest.ContentBytes == null ? null : new ByteArrayContent(capturedRequest.ContentBytes),
+      Version = capturedRequest.Version,
+      VersionPolicy = capturedRequest.VersionPolicy
+    };
+
+    foreach (var kvp in capturedRequest.Headers)
+    {
+      request.Headers.Add(kvp.Key, kvp.Value);
+    }
+
+    foreach (var kvp in capturedRequest.Options)
+    {
+      request.Options.TryAdd(kvp.Key, kvp.Value);
+    }
+
+    return request;
   }
 }
