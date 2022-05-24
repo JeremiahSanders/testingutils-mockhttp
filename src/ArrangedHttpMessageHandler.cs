@@ -92,17 +92,15 @@ public class ArrangedHttpMessageHandler : HttpMessageHandler,
   }
 
   /// <inheritdoc cref="HttpMessageHandler.SendAsync" />
-  /// <exception cref="InvalidOperationException">
-  ///   Thrown when no registered <see cref="MessageCaseHandler" /> handles the
-  ///   request.
+  /// <exception cref="UnhandledHttpRequestException">
+  ///   Thrown when no registered <see cref="MessageCaseHandler" /> handles the request.
   /// </exception>
   protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
     CancellationToken cancellationToken)
   {
     var capturedMessage = await CapturedHttpRequestMessage.FromHttpRequestMessage(request);
     var handler = await TryGetHandler(capturedMessage) ??
-                  throw new InvalidOperationException(
-                    $"No handlers registered for request. {request.Method} {request.RequestUri}");
+                  throw new UnhandledHttpRequestException(capturedMessage);
 
     return await handler(capturedMessage, cancellationToken);
   }

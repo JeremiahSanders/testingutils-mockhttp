@@ -36,7 +36,7 @@ public class AcceptMethodTests
       .BuildHttpClient();
     var differingMethod = TestData.HttpMethods.First(otherMethod => otherMethod != method);
 
-    await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+    await Assert.ThrowsAsync<UnhandledHttpRequestException>(async () =>
     {
       await client.SendAsync(new HttpRequestMessage(differingMethod, uri));
     });
