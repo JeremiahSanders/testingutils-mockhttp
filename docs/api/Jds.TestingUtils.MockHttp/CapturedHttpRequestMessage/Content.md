@@ -1,5 +1,7 @@
 # CapturedHttpRequestMessage.Content property
 
+Optional request HttpContent.
+
 ```csharp
 public HttpContent? Content { get; set; }
 ```

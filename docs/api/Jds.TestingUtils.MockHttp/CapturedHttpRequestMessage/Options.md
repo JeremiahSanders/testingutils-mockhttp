@@ -1,5 +1,7 @@
 # CapturedHttpRequestMessage.Options property
 
+Request HttpRequestOptions.
+
 ```csharp
 public HttpRequestOptions Options { get; set; }
 ```

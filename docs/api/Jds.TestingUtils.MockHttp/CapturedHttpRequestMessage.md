@@ -11,15 +11,15 @@ public record CapturedHttpRequestMessage
 | name | description |
 | --- | --- |
 | [CapturedHttpRequestMessage](CapturedHttpRequestMessage/CapturedHttpRequestMessage.md)(…) | A captured HttpRequestMessage. |
-| [Content](CapturedHttpRequestMessage/Content.md) { get; set; } |  |
-| [ContentBytes](CapturedHttpRequestMessage/ContentBytes.md) { get; set; } |  |
-| [ContentString](CapturedHttpRequestMessage/ContentString.md) { get; set; } |  |
-| [Headers](CapturedHttpRequestMessage/Headers.md) { get; set; } |  |
-| [Method](CapturedHttpRequestMessage/Method.md) { get; set; } |  |
-| [Options](CapturedHttpRequestMessage/Options.md) { get; set; } |  |
-| [RequestUri](CapturedHttpRequestMessage/RequestUri.md) { get; set; } |  |
-| [Version](CapturedHttpRequestMessage/Version.md) { get; set; } |  |
-| [VersionPolicy](CapturedHttpRequestMessage/VersionPolicy.md) { get; set; } |  |
+| [Content](CapturedHttpRequestMessage/Content.md) { get; set; } | Optional request HttpContent. |
+| [ContentBytes](CapturedHttpRequestMessage/ContentBytes.md) { get; set; } | Optional request content, as a ByteArray. |
+| [ContentString](CapturedHttpRequestMessage/ContentString.md) { get; set; } | Optional request content, as a String. |
+| [Headers](CapturedHttpRequestMessage/Headers.md) { get; set; } | Request HttpRequestHeaders. |
+| [Method](CapturedHttpRequestMessage/Method.md) { get; set; } | Request HttpMethod. |
+| [Options](CapturedHttpRequestMessage/Options.md) { get; set; } | Request HttpRequestOptions. |
+| [RequestUri](CapturedHttpRequestMessage/RequestUri.md) { get; set; } | Request Uri. |
+| [Version](CapturedHttpRequestMessage/Version.md) { get; set; } | Request HTTP message [`Version`](./CapturedHttpRequestMessage/Version.md). |
+| [VersionPolicy](CapturedHttpRequestMessage/VersionPolicy.md) { get; set; } | Request HttpVersionPolicy. |
 | static [FromHttpRequestMessage](CapturedHttpRequestMessage/FromHttpRequestMessage.md)(…) | Captures the content of *message*. |
 
 ## See Also

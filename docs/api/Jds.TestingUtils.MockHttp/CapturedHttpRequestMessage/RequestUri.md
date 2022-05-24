@@ -1,5 +1,7 @@
 # CapturedHttpRequestMessage.RequestUri property
 
+Request Uri.
+
 ```csharp
 public Uri? RequestUri { get; set; }
 ```
