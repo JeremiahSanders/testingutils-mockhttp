@@ -15,7 +15,7 @@ public class AcceptRouteXmlTests
     var responseSerializer = XmlSerialization.GetSerializer(typeof(ResponseObject));
     using var client = CreateMockApi(arrangedUri);
 
-    await Assert.ThrowsAsync<InvalidOperationException>(async () => await client.PostAsync(requestedUri,
+    await Assert.ThrowsAsync<UnhandledHttpRequestException>(async () => await client.PostAsync(requestedUri,
       CreateHttpContent.ApplicationXml(new RequestObject { Value = requestedValue }))
     );
   }

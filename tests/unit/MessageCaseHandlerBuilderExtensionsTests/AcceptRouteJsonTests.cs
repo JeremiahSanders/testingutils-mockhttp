@@ -16,7 +16,7 @@ public class AcceptRouteJsonTests
     var requestedValue = 6;
     using var client = CreateMockApi(arrangedUri);
 
-    await Assert.ThrowsAsync<InvalidOperationException>(async () => await client.PostAsync(requestedUri,
+    await Assert.ThrowsAsync<UnhandledHttpRequestException>(async () => await client.PostAsync(requestedUri,
       CreateHttpContent.ApplicationJson(new RequestObject { Value = requestedValue }))
     );
   }
