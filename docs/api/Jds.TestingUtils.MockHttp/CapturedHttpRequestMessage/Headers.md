@@ -1,5 +1,7 @@
 # CapturedHttpRequestMessage.Headers property
 
+Request HttpRequestHeaders.
+
 ```csharp
 public HttpRequestHeaders Headers { get; set; }
 ```

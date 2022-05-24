@@ -11,8 +11,8 @@ public record MessageCaseHandler
 | name | description |
 | --- | --- |
 | [MessageCaseHandler](MessageCaseHandler/MessageCaseHandler.md)(…) | A [`CapturedHttpRequestMessage`](./CapturedHttpRequestMessage.md) handler, arranged to handle a specific test case. |
-| [DoesHandleMessage](MessageCaseHandler/DoesHandleMessage.md) { get; set; } |  |
-| [HandleMessage](MessageCaseHandler/HandleMessage.md) { get; set; } |  |
+| [DoesHandleMessage](MessageCaseHandler/DoesHandleMessage.md) { get; set; } | A Func which determines if a message is handled. |
+| [HandleMessage](MessageCaseHandler/HandleMessage.md) { get; set; } | A Func which provides a HttpResponseMessage. |
 
 ## See Also
 

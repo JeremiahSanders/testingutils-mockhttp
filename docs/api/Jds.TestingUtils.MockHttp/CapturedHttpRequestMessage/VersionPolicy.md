@@ -1,5 +1,7 @@
 # CapturedHttpRequestMessage.VersionPolicy property
 
+Request HttpVersionPolicy.
+
 ```csharp
 public HttpVersionPolicy VersionPolicy { get; set; }
 ```

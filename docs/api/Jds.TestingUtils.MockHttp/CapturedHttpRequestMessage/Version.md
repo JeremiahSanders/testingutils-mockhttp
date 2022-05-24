@@ -1,5 +1,7 @@
 # CapturedHttpRequestMessage.Version property
 
+Request HTTP message `Version`.
+
 ```csharp
 public Version Version { get; set; }
 ```

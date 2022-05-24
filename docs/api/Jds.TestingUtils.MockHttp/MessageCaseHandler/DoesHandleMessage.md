@@ -1,5 +1,7 @@
 # MessageCaseHandler.DoesHandleMessage property
 
+A Func which determines if a message is handled.
+
 ```csharp
 public Func<CapturedHttpRequestMessage, Task<bool>> DoesHandleMessage { get; set; }
 ```

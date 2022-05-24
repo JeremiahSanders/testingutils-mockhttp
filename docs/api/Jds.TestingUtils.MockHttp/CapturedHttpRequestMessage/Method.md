@@ -1,5 +1,7 @@
 # CapturedHttpRequestMessage.Method property
 
+Request HttpMethod.
+
 ```csharp
 public HttpMethod Method { get; set; }
 ```

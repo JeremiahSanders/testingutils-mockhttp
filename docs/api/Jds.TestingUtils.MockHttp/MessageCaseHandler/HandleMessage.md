@@ -1,5 +1,7 @@
 # MessageCaseHandler.HandleMessage property
 
+A Func which provides a HttpResponseMessage.
+
 ```csharp
 public Func<CapturedHttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> 
     HandleMessage { get; set; }

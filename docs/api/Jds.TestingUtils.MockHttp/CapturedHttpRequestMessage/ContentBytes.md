@@ -1,5 +1,7 @@
 # CapturedHttpRequestMessage.ContentBytes property
 
+Optional request content, as a ByteArray.
+
 ```csharp
 public byte[]? ContentBytes { get; set; }
 ```
