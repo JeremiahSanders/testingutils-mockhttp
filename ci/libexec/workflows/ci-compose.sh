@@ -20,9 +20,11 @@ function ci-compose() {
   printf "Composing build artifacts...\n\n"
   
   function createDocs() {
+    cd "${PROJECT_ROOT}"
+    dotnet tool restore
     local sourcePath="${BUILD_UNPACKAGED_DIST}/TestingUtils.MockHttp.dll"
     local outputPath="${BUILD_DOCS}/md"
-    xmldocmd "${sourcePath}" "${outputPath}" \
+    dotnet xmldocmd "${sourcePath}" "${outputPath}" \
       --namespace "Jds.TestingUtils.MockHttp" \
       --source "https://github.com/JeremiahSanders/testingutils-mockhttp/src" \
       --newline lf \
