@@ -51,8 +51,12 @@ public static partial class MessageCaseHandlerBuilderExtensions
     MediaTypeHeaderValue? contentType = null,
     XmlSerializer? xmlSerializer = null)
   {
-    return builder.SetResponseHandler((_, _) =>
-      new HttpResponseMessage(httpStatusCode) { Content = bodyObject.ToXmlHttpContent(contentType, xmlSerializer) }
+    return builder.SetResponseHandler((capturedRequest, _) =>
+      new HttpResponseMessage(httpStatusCode)
+        {
+          Content = bodyObject.ToXmlHttpContent(contentType, xmlSerializer),
+          RequestMessage = capturedRequest.ToHttpRequestMessage()
+        }
         .AsTask()
     );
   }
@@ -81,7 +85,8 @@ public static partial class MessageCaseHandlerBuilderExtensions
     {
       return new HttpResponseMessage(await deriveHttpStatusCode(message, cancellationToken))
       {
-        Content = (await deriveBody(message, cancellationToken)).ToXmlHttpContent(contentType, xmlSerializer)
+        Content = (await deriveBody(message, cancellationToken)).ToXmlHttpContent(contentType, xmlSerializer),
+        RequestMessage = message.ToHttpRequestMessage()
       };
     }
 
@@ -121,7 +126,8 @@ public static partial class MessageCaseHandlerBuilderExtensions
       return responseBuilder
         .WithStatusCode(await deriveHttpStatusCode(requestBody, cancellationToken))
         .WithContent(
-          (await deriveBody(requestBody, cancellationToken)).ToXmlHttpContent(contentType, xmlSerializer));
+          (await deriveBody(requestBody, cancellationToken)).ToXmlHttpContent(contentType, xmlSerializer))
+        .WithRequestMessage(message.ToHttpRequestMessage());
     });
   }
 
@@ -155,9 +161,11 @@ public static partial class MessageCaseHandlerBuilderExtensions
     {
       var requestBody = message.SafelyDeserialize(defaultRequest, xmlSerializer);
 
-      return Task.FromResult(responseBuilder
+      return responseBuilder
         .WithStatusCode(deriveHttpStatusCode(requestBody))
-        .WithContent(deriveBody(requestBody).ToXmlHttpContent(contentType, xmlSerializer)));
+        .WithContent(deriveBody(requestBody).ToXmlHttpContent(contentType, xmlSerializer))
+        .WithRequestMessage(message.ToHttpRequestMessage())
+        .AsTask();
     });
   }
 
