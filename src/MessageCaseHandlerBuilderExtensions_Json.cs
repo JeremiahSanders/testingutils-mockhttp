@@ -59,8 +59,12 @@ public static partial class MessageCaseHandlerBuilderExtensions
     JsonSerializerOptions? jsonSerializerOptions = null
   )
   {
-    return builder.SetResponseHandler((_, _) =>
-      new HttpResponseMessage(httpStatusCode) { Content = bodyObject.ToJsonHttpContent(jsonSerializerOptions) }.AsTask()
+    return builder.SetResponseHandler((capturedMessage, _) =>
+      new HttpResponseMessage(httpStatusCode)
+      {
+        Content = bodyObject.ToJsonHttpContent(jsonSerializerOptions),
+        RequestMessage = capturedMessage.ToHttpRequestMessage()
+      }.AsTask()
     );
   }
 
@@ -87,7 +91,8 @@ public static partial class MessageCaseHandlerBuilderExtensions
     {
       return new HttpResponseMessage(await deriveHttpStatusCode(message, cancellationToken))
       {
-        Content = (await deriveBody(message, cancellationToken)).ToJsonHttpContent(jsonSerializerOptions)
+        Content = (await deriveBody(message, cancellationToken)).ToJsonHttpContent(jsonSerializerOptions),
+        RequestMessage = message.ToHttpRequestMessage()
       };
     }
 
@@ -126,7 +131,8 @@ public static partial class MessageCaseHandlerBuilderExtensions
       return responseBuilder
         .WithStatusCode(await deriveHttpStatusCode(requestBody, cancellationToken))
         .WithContent(
-          (await deriveBody(requestBody, cancellationToken)).ToJsonHttpContent(jsonSerializerOptions));
+          (await deriveBody(requestBody, cancellationToken)).ToJsonHttpContent(jsonSerializerOptions))
+        .WithRequestMessage(message.ToHttpRequestMessage());
     });
   }
 
@@ -161,7 +167,8 @@ public static partial class MessageCaseHandlerBuilderExtensions
 
       return responseBuilder
         .WithStatusCode(deriveHttpStatusCode(requestBody))
-        .WithContent(deriveBody(requestBody).ToJsonHttpContent(jsonSerializerOptions));
+        .WithContent(deriveBody(requestBody).ToJsonHttpContent(jsonSerializerOptions))
+        .WithRequestMessage(message.ToHttpRequestMessage());
     });
   }
 
