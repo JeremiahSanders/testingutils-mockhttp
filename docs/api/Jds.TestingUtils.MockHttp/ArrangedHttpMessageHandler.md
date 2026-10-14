@@ -19,6 +19,12 @@ public class ArrangedHttpMessageHandler : HttpMessageHandler,
 | [GetEnumerator](ArrangedHttpMessageHandler/GetEnumerator.md)() |  |
 | [Remove](ArrangedHttpMessageHandler/Remove.md)(…) | Removes a handler, identified by *identifier*. |
 
+## Protected Members
+
+| name | description |
+| --- | --- |
+| override [SendAsync](ArrangedHttpMessageHandler/SendAsync.md)(…) |  |
+
 ## See Also
 
 * record [MessageCaseHandler](./MessageCaseHandler.md)

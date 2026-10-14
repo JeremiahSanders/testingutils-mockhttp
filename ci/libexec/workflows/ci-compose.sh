@@ -17,26 +17,37 @@ set -o nounset  # Fail if an unset variable is used.
 set -o pipefail # Fail pipelines if any command errors, not just the last one.
 
 function ci-compose() {
-  printf "Composing build artifacts...\n\n"
-  
   function createDocs() {
     cd "${PROJECT_ROOT}"
-    dotnet tool restore
+    
     local sourcePath="${BUILD_UNPACKAGED_DIST}/TestingUtils.MockHttp.dll"
+
     local outputPath="${BUILD_DOCS}/md"
-    dotnet xmldocmd "${sourcePath}" "${outputPath}" \
+    dotnet tool restore &&
+    dotnet run --project "${PROJECT_ROOT}/ci/markdown-generator" "${sourcePath}" "${outputPath}" \
       --namespace "Jds.TestingUtils.MockHttp" \
       --source "https://github.com/JeremiahSanders/testingutils-mockhttp/src" \
       --newline lf \
-      --visibility public
+      --visibility protected &&
+    printf "Generated Markdown documentation.\n"
   }
-  ci-dotnet-publish \
-    -p:GenerateDocumentationFile=true &&
-    ci-dotnet-pack \
+
+  printf "Composing build artifacts...\n\n" &&
+    dotnet publish "${PROJECT_ROOT}/src" \
+      --configuration Release \
+      --output "${BUILD_UNPACKAGED_DIST}" \
+      -p:Version="${PROJECT_VERSION_DIST}" \
       -p:GenerateDocumentationFile=true &&
-    createDocs
-  
-  printf "Composition complete.\n"
+    printf "\nCompiled assembly published to %s\n\n" "${BUILD_UNPACKAGED_DIST}" &&
+    dotnet pack "${PROJECT_ROOT}/src" \
+      --configuration Release \
+      --output "${BUILD_PACKAGED_DIST}/nuget/" \
+      -p:PackageVersion="${PROJECT_VERSION_DIST}" \
+      -p:Version="${PROJECT_VERSION_DIST}" \
+      -p:GenerateDocumentationFile=true &&
+    printf "\nNuGet package output to %s\n\n" "${BUILD_PACKAGED_DIST}/nuget/" &&
+    createDocs &&
+    printf "Composition complete.\n"
 }
 
 export -f ci-compose
