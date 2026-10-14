@@ -127,7 +127,7 @@ public class RespondWithAsyncResponseTests
     var response = await caseHandler.HandleMessage(capturedRequest, CancellationToken.None);
     timer.Stop();
 
-    timer.ElapsedMilliseconds.Should().BeGreaterOrEqualTo(delayInMilliseconds);
+    timer.ElapsedMilliseconds.Should().BeGreaterThanOrEqualTo(delayInMilliseconds);
     response.StatusCode.Should().Be(HttpStatusCode.OK);
     (await response.Content.ReadFromJsonAsync<FauxResponse>()).Should().BeEquivalentTo(expectedResponse);
   }
